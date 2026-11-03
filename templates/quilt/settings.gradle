@@ -1,0 +1,9 @@
+pluginManagement {
+    repositories {
+        maven { url = 'https://maven.quiltmc.org/repository/release/' }
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+
+rootProject.name = '{{mod_id}}'

@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "id": "vanilla-food-improvement",
+  "version": "${version}",
+  "name": "原版食物改进",
+  "description": "改进原版食物系统，添加旧版本附魔金苹果的合成配方",
+  "authors": [
+    "Owlbyte"
+  ],
+  "contact": {
+    "homepage": "",
+    "sources": ""
+  },
+  "license": "MIT",
+  "icon": "assets/vanilla-food-improvement/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "com.owlbyte.vanillafoodimprovement.VanillaFoodImprovement"
+    ],
+    "client": [
+      "com.owlbyte.vanillafoodimprovement.VanillaFoodImprovementClient"
+    ]
+  },
+  "mixins": [
+    "vanilla-food-improvement.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.15.3",
+    "minecraft": "~1.20.1",
+    "java": ">=17",
+    "fabric-api": "*"
+  },
+  "suggests": {
+    "another-mod": "*"
+  }
+}

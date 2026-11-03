@@ -1,0 +1,13 @@
+{
+  "required": true,
+  "package": "com.owlbyte.vanillafoodimprovement.mixin",
+  "compatibilityLevel": "JAVA_17",
+  "mixins": [
+    "GlisteringMelonSliceMixin"
+  ],
+  "client": [
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "item.minecraft.enchanted_golden_apple": "Enchanted Golden Apple",
+  "item.minecraft.apple": "Apple",
+  "item.minecraft.gold_block": "Block of Gold",
+  "item.minecraft.glistering_melon_slice": "Glistering Melon Slice",
+  "vanilla-food-improvement.recipe.enchanted_golden_apple": "Old enchanted golden apple recipe added",
+  "vanilla-food-improvement.food.glistering_melon": "Glistering melon slice is now edible! Grants 3 seconds of regeneration"
+}

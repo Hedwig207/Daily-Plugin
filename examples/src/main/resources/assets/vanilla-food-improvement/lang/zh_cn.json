@@ -1,0 +1,8 @@
+{
+  "item.minecraft.enchanted_golden_apple": "附魔金苹果",
+  "item.minecraft.apple": "苹果",
+  "item.minecraft.gold_block": "金块",
+  "item.minecraft.glistering_melon_slice": "闪烁的西瓜片",
+  "vanilla-food-improvement.recipe.enchanted_golden_apple": "旧版附魔金苹果合成配方已添加",
+  "vanilla-food-improvement.food.glistering_melon": "闪烁的西瓜片现在可以食用！食用后获得3秒再生效果"
+}
