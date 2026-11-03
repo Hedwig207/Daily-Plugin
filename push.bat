@@ -33,8 +33,9 @@ git rev-parse --git-dir >nul 2>&1
 if errorlevel 1 (
     echo Initialising new git repository...
     git init
-    git branch -M "%BRANCH%"
 )
+rem Always ensure we are on the target branch (rename if needed).
+git branch -M "%BRANCH%"
 
 echo.
 echo ============================================
