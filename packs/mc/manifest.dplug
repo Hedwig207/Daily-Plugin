@@ -1,0 +1,5 @@
+id=mc
+name=DailyPlugin Minecraft Addon
+version=0.3.0
+type=loader
+description=Bundles the Forge, Fabric, NeoForge and Quilt mod templates as a module.

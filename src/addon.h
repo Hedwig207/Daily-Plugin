@@ -58,4 +58,9 @@ int loader_usable(const char *loader);
 /* 查找某加载器对应附加包提供的模板目录（若无则 NULL，需 free）。 */
 char *loader_extra_templates(const char *loader);
 
+/* 生成一个新的 .dplug 项目骨架（含 manifest + 示例模板），供用户扩展。
+ * 成功返回 0。 */
+int addon_new(const char *dir, const char *id, const char *name,
+              const char *type, const char *description);
+
 #endif /* DAILYPLUGIN_ADDON_H */

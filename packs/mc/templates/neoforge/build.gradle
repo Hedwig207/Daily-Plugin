@@ -1,0 +1,41 @@
+plugins {
+    id 'java'
+    id 'net.neoforged.gradle.userdev' version '{{neo_gradle_version}}'
+}
+
+version = '{{version}}'
+group = '{{group}}'
+
+base {
+    archivesName = '{{mod_id}}'
+}
+
+java.toolchain.languageVersion = JavaLanguageVersion.of(17)
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation "net.neoforged:neoforge:{{neo_version}}"
+}
+
+neoForge {
+    runs {
+        client { client() }
+        server { server() }
+        data { data() }
+    }
+
+    mods {
+        '{{mod_id}}' {
+            sourceSet sourceSets.main
+        }
+    }
+}
+
+processResources {
+    var filter = ['version': project.version]
+    inputs.properties filter
+    filesMatching('META-INF/neoforge.mods.toml') { expand filter }
+}

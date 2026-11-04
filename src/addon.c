@@ -153,17 +153,48 @@ int addon_install(const char *dplug) {
     printf("Addon '%s' v%s installed.\n", a.id, a.version[0] ? a.version : "?");
     printf("  location: %s\n", dest);
 
-    /* 4. 若为 loader 附加包，把其 templates 合并到全局模板缓存 */
-    if (strcmp(a.type, "loader") == 0 && a.loader[0]) {
+    /* 4. 若为 loader/tool 附加包，把其 templates 下的每个加载器模板
+     *    分别合并到全局模板缓存。这样单附加包可携带整套模板库。 */
+    if (strcmp(a.type, "loader") == 0 || strcmp(a.type, "tool") == 0) {
         char *extra = path_join(dest, "templates");
         if (dir_exists(extra)) {
             char *tpl_root = resolve_templates_dir();
             if (tpl_root) {
-                char *loader_tpl = path_join(tpl_root, a.loader);
-                mkdir_p(loader_tpl);
-                copy_tree_into(extra, loader_tpl);
-                printf("  loaded templates for loader '%s'.\n", a.loader);
-                free(loader_tpl);
+#ifdef _WIN32
+                char pat[1024];
+                snprintf(pat, sizeof(pat), "%s\\*", extra);
+                WIN32_FIND_DATAA fd;
+                HANDLE h = FindFirstFileA(pat, &fd);
+                if (h != INVALID_HANDLE_VALUE) {
+                    int n = 0;
+                    do {
+                        if (fd.cFileName[0] == '.') continue;
+                        char *sub = path_join(extra, fd.cFileName);
+                        char *dst_tpl = path_join(tpl_root, fd.cFileName);
+                        mkdir_p(dst_tpl);
+                        if (copy_tree_into(sub, dst_tpl) == 0) { printf("  loaded template '%s'.\n", fd.cFileName); n++; }
+                        free(sub); free(dst_tpl);
+                    } while (FindNextFileA(h, &fd));
+                    FindClose(h);
+                    if (n == 0 && a.loader[0]) {
+                        /* 兼容旧 manifest：兜底仅合并单 loader 目录本身 */
+                        char *loader_tpl = path_join(tpl_root, a.loader);
+                        mkdir_p(loader_tpl);
+                        copy_tree_into(extra, loader_tpl);
+                        printf("  loaded templates for loader '%s'.\n", a.loader);
+                        free(loader_tpl);
+                    }
+                }
+#else
+                fprintf(stderr, "  note: POSIX template merge for multi-loader addon not implemented.\n");
+                if (a.loader[0]) {
+                    char *loader_tpl = path_join(tpl_root, a.loader);
+                    mkdir_p(loader_tpl);
+                    copy_tree_into(extra, loader_tpl);
+                    printf("  loaded templates for loader '%s'.\n", a.loader);
+                    free(loader_tpl);
+                }
+#endif
             }
             free(tpl_root);
         }
@@ -297,6 +328,7 @@ int loader_usable(const char *loader) {
             do {
                 if (fd.cFileName[0] == '.') continue;
                 if (!(fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) continue;
+                /* 判据 A：manifest 声明的 loader */
                 char *m = path_join(path_join(home, fd.cFileName), ADDON_MANIFEST_NAME);
                 char *t = read_file(m, NULL);
                 if (t) {
@@ -306,6 +338,13 @@ int loader_usable(const char *loader) {
                     free(t);
                 }
                 free(m);
+                /* 判据 B：附加包 templates/ 目录下含该加载器模板 */
+                if (!found) {
+                    char *tp = path_join(path_join(home, fd.cFileName), "templates");
+                    char *cand = path_join(tp, loader);
+                    if (dir_exists(cand)) found = 1;
+                    free(cand); free(tp);
+                }
             } while (!found && FindNextFileA(h, &fd));
             FindClose(h);
         }
@@ -352,4 +391,85 @@ char *loader_extra_templates(const char *loader) {
 #endif
     free(home);
     return out;
+}
+
+/* 生成一个新的 .dplug 项目骨架：
+ *   <dir>/manifest.dplug      - 附加包清单
+ *   <dir>/README.dplug.md     - 制作说明
+ *   <dir>/templates/mymod/... - 演示模板（用户可替换成自己的）
+ * 之后用户可加入多个 templates/<loader>/ 目录，再用 dp addon pack 打包。 */
+int addon_new(const char *dir, const char *id, const char *name,
+              const char *type, const char *description) {
+    if (dir_exists(dir)) {
+        fprintf(stderr, "Error: directory '%s' already exists.\n", dir);
+        return -1;
+    }
+    mkdir_p(dir);
+
+    const char *t = type && type[0] ? type : "loader";
+    const char *nm = name && name[0] ? name : id;
+    const char *ds = description && description[0] ? description : "Addon powered by DailyPlugin";
+    const char *loader = (strcmp(t, "loader") == 0) ? id : "";
+
+    char *m = path_join(dir, ADDON_MANIFEST_NAME);
+    char buf[1024];
+    int n = snprintf(buf, sizeof(buf),
+        "id=%s\n"
+        "name=%s\n"
+        "version=0.1.0\n"
+        "type=%s\n"
+        "loader=%s\n"
+        "description=%s\n",
+        id, nm, t, loader, ds);
+    write_file(m, buf, (size_t)n);
+    free(m);
+
+    /* 演示模板：一个最小 loader 模板占位 */
+    char *tpl = path_join(path_join(dir, "templates"), "example");
+    mkdir_p(tpl);
+    char *f = path_join(tpl, "README.txt");
+    const char *s =
+        "This is a demo template.\n"
+        "Replace or add your own templates/<loader>/ directories, then:\n"
+        "  dp addon pack THIS_DIR --output myaddon.dplug\n";
+    write_file(f, s, strlen(s));
+    free(f);
+    free(tpl);
+
+    /* 制作说明 */
+    char *r = path_join(dir, "README.dplug.md");
+    const char *md =
+        "# How to build a DailyPlugin addon (.dplug)\n"
+        "\n"
+        "A `.dplug` is a zip archive containing:\n"
+        "\n"
+        "    manifest.dplug            key=value metadata (REQUIRED)\n"
+        "    templates/<loader>/...    optional mod-loader templates\n"
+        "\n"
+        "## manifest fields\n"
+        "\n"
+        "    id=<unique id>\n"
+        "    name=<display name>\n"
+        "    version=<x.y.z>\n"
+        "    type=loader|tool|extension\n"
+        "    loader=<loader id>   (only when type=loader)\n"
+        "    description=<one-line summary>\n"
+        "\n"
+        "## workflow\n"
+        "\n"
+        "    dp addon new myaddon --name \"My Addon\" --type loader\n"
+        "    # ... add your templates/<loader>/ files ...\n"
+        "    dp addon pack myaddon --output myaddon.dplug\n"
+        "    dp addon install myaddon.dplug\n"
+        "    dp addon list\n"
+        "\n"
+        "When installed, `templates/*` are merged into the loader template cache,\n"
+        "so any loader with a template becomes usable by `dp new`.\n";
+    write_file(r, md, strlen(md));
+    free(r);
+
+    printf("Generated addon skeleton in '%s'\n", dir);
+    printf("  manifest.dplug\n  templates/example/\n  README.dplug.md\n");
+    printf("Next: add templates, then 'dp addon pack %s --output x.dplug'.\n", dir);
+    return 0;
 }

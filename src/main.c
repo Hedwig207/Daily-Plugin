@@ -31,7 +31,7 @@ static const char *GENERAL_HELP =
     "  pack <dir>          Bundle a project directory into a '.plug' archive.\n"
     "  unpack <file.plug>  Restore a '.plug' archive into source files.\n"
     "  addon <sub>         Manage DailyPlugin addon packages (.dplug).\n"
-    "                      pack <dir>|install <file>|uninstall <id>|list\n"
+    "                      new <dir>|pack <dir>|install <file>|uninstall <id>|list\n"
     "  update              Check for & apply updates from GitHub Releases.\n"
     "  version             Print version.\n"
     "  help -all           Show help for every aspect.\n"
@@ -60,7 +60,7 @@ static const char *MC_HELP =
     "  --mc <ver>          Target Minecraft version (default 1.20.1).\n"
     "  --version <v>       Mod version (default 1.0.0).\n"
     "  --author <a>        Author (default Owlbyte).\n"
-    "  --license <l>       License (default MIT).\n"
+    "  --license <l>       License (default AGPL-3.0).\n"
     "  --desc <d>          Mod description.\n"
     "\n"
     "Forge options:\n"
@@ -216,7 +216,7 @@ static int cmd_new(int argc, char **argv) {
     if (!neo_gradle) neo_gradle = "7.0.80";
     if (!version) version = "1.0.0";
     if (!author) author = "Owlbyte";
-    if (!license) license = "MIT";
+    if (!license) license = "AGPL-3.0";
     if (!desc) desc = "";
 
     char id[256];
@@ -407,7 +407,7 @@ static int cmd_addon(int argc, char **argv) {
     for (int i = 2; i < argc; i++)
         if (argv[i][0] != '-') { sub = argv[i]; break; }
     if (!sub) {
-        fprintf(stderr, "Usage: dp addon <pack|install|uninstall|list> ...\n");
+        fprintf(stderr, "Usage: dp addon <new|pack|install|uninstall|list> ...\n");
         return 1;
     }
     if (strcmp(sub, "list") == 0) return addon_list();
@@ -415,6 +415,17 @@ static int cmd_addon(int argc, char **argv) {
     const char *target = NULL;
     for (int i = 3; i < argc; i++)
         if (argv[i][0] != '-') { target = argv[i]; break; }
+
+    if (strcmp(sub, "new") == 0) {
+        if (!target) { fprintf(stderr, "Usage: dp addon new <dir> [--id id] [--name n] [--type loader]\n"); return 1; }
+        const char *id = opt_value(argc, argv, "--id");
+        const char *nm = opt_value(argc, argv, "--name");
+        const char *ty = opt_value(argc, argv, "--type");
+        const char *ds = opt_value(argc, argv, "--desc");
+        if (!id) id = target;
+        if (addon_new(target, id, nm, ty, ds) != 0) return 1;
+        return 0;
+    }
 
     if (strcmp(sub, "pack") == 0) {
         if (!target) { fprintf(stderr, "Usage: dp addon pack <dir> [--output file.dplug]\n"); return 1; }

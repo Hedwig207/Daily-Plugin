@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "id": "{{mod_id}}",
+  "version": "${version}",
+  "name": "{{mod_name}}",
+  "description": "{{description}}",
+  "authors": [
+    "{{author}}"
+  ],
+  "license": "{{license}}",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "{{package}}.{{mod_class}}"
+    ]
+  },
+  "mixins": [
+    "mod.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.15.0",
+    "minecraft": "~{{mc_version}}",
+    "java": ">=17"
+  }
+}
